@@ -18,7 +18,7 @@ ARG TARGETARCH TARGETOS
 RUN \
     --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
-    if [ "${TARGETARCH}" = "arm64" ]; then export CC="gcc-aarch64-none-elf"; fi; \
+    if [ "${TARGETARCH}" = "arm64" ]; then export CC="aarch64-none-elf-gcc"; fi; \
     CGO_ENABLED=1 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -trimpath -ldflags '-s -w -linkmode external -extldflags "-fno-PIC -static"' -v -o /usr/bin/amneziawg-go
 
