@@ -9,8 +9,9 @@ ARG TARGETARCH TARGETOS
 
 FROM --platform=${BUILDPLATFORM:-linux/amd64} golang:${GOLANG_VERSION}-alpine${ALPINE_VERSION} AS builder
 
-RUN apk add --update --no-cache git && \
-    git clone --depth 1 --branch ${AWG_BRANCH} ${AWG_REPO} /app && cd /app && git reset --hard ${AWG_COMMIT}
+RUN set -x; \
+    apk add --update --no-cache git; \
+    git clone --branch "${AWG_BRANCH}" "${AWG_REPO}" /app; cd /app; git reset --hard "${AWG_COMMIT}"
 
 WORKDIR /app
 
