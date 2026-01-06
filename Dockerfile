@@ -85,8 +85,7 @@ RUN DEPS=" \
     ln -s /usr/share/man/man8/awg-quick.8                  /usr/share/man/man8/wg-quick.8; \
     ln -s /usr/share/bash-completion/completions/awg       /usr/share/bash-completion/completions/wg; \
     ln -s /usr/share/bash-completion/completions/awg-quick /usr/share/bash-completion/completions/wg-quick; \
-    rm -rf ./import; \
-    mkdir -p ./hooks/up ./hooks/down
+    rm -rf ./import
 
 #Ref: https://github.com/amnezia-vpn/amnezia-client/blob/4.8.11.4/client/server_scripts/awg/Dockerfile
 RUN echo -e " \n\

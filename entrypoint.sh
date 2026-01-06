@@ -134,6 +134,7 @@ forwarding_down() {
 }
 
 hooks() {
+	[ ! -d "/app/hooks/$1" ] && mkdir -p "/app/hooks/$1"
 	local FILE; for FILE in /app/hooks/$1/*.sh; do
 		if [ -s "${FILE}" ]; then
 			/bin/bash "${FILE}" || true
