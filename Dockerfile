@@ -135,7 +135,7 @@ RUN \
     echo -e "\
     [Interface]\n\
     PrivateKey = ${LOCAL_PRIVATE_KEY}\n\
-    Address = {LOCAL_ADDR_IPV4}/{LOCAL_ADDR_MASK}\n\
+    Address = {LOCAL_ADDR_IPV4}/{LOCAL_MASK_IPV4}, {LOCAL_ADDR_IPV6}/{LOCAL_MASK_IPV6}\n\
     ListenPort = {LOCAL_PORT}\n\
     Jc = {JUNK_PACKET_COUNT}\n\
     Jmin = {JUNK_PACKET_MIN_SIZE}\n\
@@ -149,9 +149,9 @@ RUN \
     " | sed -e 's/^\s\+//g' > ./wg0.conf; \
     echo -e "\
     [Interface]\n\
-    Address = {REMOTE_ADDR_IPV4}/32\n\
+    Address = {REMOTE_ADDR_IPV4}/32, {REMOTE_ADDR_IPV6}/128\n\
     DNS = {PRIMARY_DNS}, {SECONDARY_DNS}\n\
-    PrivateKey = {PEER_PRIVATE_KEY}\n\
+    PrivateKey = {REMOTE_PRIVATE_KEY}\n\
     Jc = {JUNK_PACKET_COUNT}\n\
     Jmin = {JUNK_PACKET_MIN_SIZE}\n\
     Jmax = {JUNK_PACKET_MAX_SIZE}\n\
