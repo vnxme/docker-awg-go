@@ -50,13 +50,6 @@ RUN \
 
 FROM alpine:${ALPINE_VERSION}
 
-COPY --chmod=0755 entrypoint.sh /app/
-COPY --from=builder /app/export /app/import
-
-WORKDIR /app
-
-# Ref: https://github.com/amnezia-vpn/amneziawg-tools/blob/v1.0.20250903/.github/workflows/linux-build.yml
-# Ref: https://github.com/amnezia-vpn/amneziawg-tools/blob/v1.0.20250903/src/Makefile
 RUN DEPS=" \
     bash \
     bash-completion \
@@ -72,7 +65,15 @@ RUN DEPS=" \
     openssl \
     vlan \
     "; \
-    apk add --update --no-cache --virtual .deps ${DEPS}; \
+    apk add --update --no-cache --virtual .deps ${DEPS}
+
+COPY --from=builder /app/export /app/import
+
+WORKDIR /app
+
+# Ref: https://github.com/amnezia-vpn/amneziawg-tools/blob/v1.0.20250903/.github/workflows/linux-build.yml
+# Ref: https://github.com/amnezia-vpn/amneziawg-tools/blob/v1.0.20250903/src/Makefile
+RUN \
     mkdir -p /usr/share/bash-completion/completions /usr/share/man/man8; \
     chmod 0755 ./import/bin/*; \
     chmod 0644 ./import/completion/* ./import/man/*; \
@@ -129,7 +130,7 @@ RUN \
     echo "${LOCAL_PUBLIC_KEY}" > ./wg0_local_public.key; \
     LOCAL_SHARED_KEY="$(wg genpsk)"; \
     echo "${LOCAL_SHARED_KEY}" > ./wg0_shared.key; \
-    echo -e "\n\
+    echo -e "\
     [Interface]\n\
     PrivateKey = ${LOCAL_PRIVATE_KEY}\n\
     Address = $AWG_SUBNET_IP/$WIREGUARD_SUBNET_CIDR\n\
@@ -144,7 +145,7 @@ RUN \
     H3 = $UNDERLOAD_PACKET_MAGIC_HEADER\n\
     H4 = $TRANSPORT_PACKET_MAGIC_HEADER\n\
     " | sed -e 's/^\s\+//g' > ./wg0.conf; \
-    echo -e "\n\
+    echo -e "\
     [Interface]\n\
     Address = $WIREGUARD_CLIENT_IP/32\n\
     DNS = $PRIMARY_DNS, $SECONDARY_DNS\n\
@@ -173,6 +174,8 @@ RUN \
     Endpoint = $SERVER_IP_ADDRESS:$AWG_SERVER_PORT\n\
     PersistentKeepalive = 25\n\
     " | sed -e 's/^\s\+//g' > ./wg0.peer.conf.template
+
+COPY --chmod=0755 entrypoint.sh /app/
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["bash", "--", "/app/entrypoint.sh"]
