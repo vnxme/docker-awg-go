@@ -5,11 +5,11 @@ FROM --platform=$BUILDPLATFORM tonistiigi/xx AS xx
 
 FROM --platform=$BUILDPLATFORM golang:${GOLANG_VERSION}-alpine AS builder
 
-RUN apk add clang lld
+RUN apk add clang lld git
 
 COPY --from=xx / /
 
-ARG TARGETARCH TARGETOS TARGETPLATFORM
+ARG TARGETARCH TARGETOS TARGETPLATFORM TARGETVARIANT
 
 RUN xx-info env
 
@@ -23,7 +23,7 @@ ARG GO_REPO=https://github.com/amnezia-vpn/amneziawg-go
 RUN \
     --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
-    xx-apk add --update --no-cache build-base git; \
+    xx-apk add --update --no-cache build-base; \
     git clone --branch "${GO_BRANCH}" "${GO_REPO}" .; \
     git reset --hard "${GO_COMMIT}"; \
     CGO_ENABLED=1 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
@@ -38,7 +38,7 @@ ARG TOOLS_REPO=https://github.com/amnezia-vpn/amneziawg-tools
 
 # Ref: https://github.com/amnezia-vpn/amneziawg-tools/blob/v1.0.20250903/.github/workflows/linux-build.yml
 RUN \
-    xx-apk add --update --no-cache build-base git linux-headers; \
+    xx-apk add --update --no-cache build-base linux-headers; \
     git clone --branch "${TOOLS_BRANCH}" "${TOOLS_REPO}" .; \
     git reset --hard "${TOOLS_COMMIT}"; \
     cd src; make; xx-verify ./wg
