@@ -7,8 +7,7 @@ ARG AWG_BRANCH=master
 ARG AWG_COMMIT=449d7cffd4adf86971bd679d0be5384b443e8be5
 ARG AWG_REPO=https://github.com/amnezia-vpn/amneziawg-go
 
-RUN set -x; \
-    apk add --update --no-cache build-base git; \
+RUN apk add --update --no-cache build-base git; \
     git clone --branch "${AWG_BRANCH}" "${AWG_REPO}" /app; cd /app; git reset --hard "${AWG_COMMIT}"
 
 WORKDIR /app
