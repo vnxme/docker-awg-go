@@ -162,12 +162,14 @@ launch() {
 	if [ -n "$(which awg)" ] && [ -n "$(which awg-quick)" ] && [ -n "$(which amneziawg-go)" ]; then
 		local FILE="${AWG_CONFIG:-/etc/amnezia/amneziawg/wg0.conf}"
 		if [ -s "${FILE}" ]; then
+			awg-quick down "${FILE}" || true
 			awg-quick up "${FILE}" || true
 			TUNS+=("${FILE}")
 		else
 			DIR="$(dirname -- "${FILE}")"
 			if [ -d "${DIR}" ]; then
 				local FILE; for FILE in ${DIR}/*.conf; do
+					awg-quick down "${FILE}" || true
 					awg-quick up "${FILE}" || true
 					TUNS+=("${FILE}")
 				done
