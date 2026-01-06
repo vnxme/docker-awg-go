@@ -46,6 +46,7 @@ RUN \
 
 FROM alpine:${ALPINE_VERSION}
 
+COPY --chmod=0755 entrypoint.sh /app/
 COPY --from=builder /app/export /app/import
 
 WORKDIR /app
@@ -108,8 +109,6 @@ RUN echo -e " \n\
     * soft nofile 51200 \n\
     * hard nofile 51200 \n\
     " | sed -e 's/^\s\+//g' | tee -a /etc/security/limits.conf
-
-COPY --chmod=0755 entrypoint.sh /app/
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["bash", "--", "/app/entrypoint.sh"]
