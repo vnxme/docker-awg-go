@@ -11,6 +11,7 @@ ARG GO_BRANCH=master
 ARG GO_COMMIT=449d7cffd4adf86971bd679d0be5384b443e8be5
 ARG GO_REPO=https://github.com/amnezia-vpn/amneziawg-go
 
+# Ref: https://github.com/amnezia-vpn/amneziawg-go/blob/v0.2.16/Dockerfile
 RUN \
     --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
@@ -26,6 +27,7 @@ ARG TOOLS_BRANCH=master
 ARG TOOLS_COMMIT=5c6ffd6168f7c69199200a91803fa02e1b8c4152
 ARG TOOLS_REPO=https://github.com/amnezia-vpn/amneziawg-tools
 
+# Ref: https://github.com/amnezia-vpn/amneziawg-tools/blob/v1.0.20250903/.github/workflows/linux-build.yml
 RUN \
     apk add --update --no-cache build-base git linux-headers; \
     git clone --branch "${TOOLS_BRANCH}" "${TOOLS_REPO}" .; \
@@ -34,6 +36,8 @@ RUN \
 
 WORKDIR /app/export
 
+# Ref: https://github.com/amnezia-vpn/amneziawg-tools/blob/v1.0.20250903/.github/workflows/linux-build.yml
+# Ref: https://github.com/amnezia-vpn/amneziawg-tools/blob/v1.0.20250903/src/Makefile
 RUN \
     mkdir -p ./bin ./completion ./man; \
     mv /app/go/amneziawg-go                               ./bin/amneziawg-go; \
@@ -51,6 +55,8 @@ COPY --from=builder /app/export /app/import
 
 WORKDIR /app
 
+# Ref: https://github.com/amnezia-vpn/amneziawg-tools/blob/v1.0.20250903/.github/workflows/linux-build.yml
+# Ref: https://github.com/amnezia-vpn/amneziawg-tools/blob/v1.0.20250903/src/Makefile
 RUN DEPS=" \
     bash \
     bash-completion \
@@ -83,6 +89,7 @@ RUN DEPS=" \
     rm -rf ./import; \
     mkdir -p ./hooks/up ./hooks/down
 
+#Ref: https://github.com/amnezia-vpn/amnezia-client/blob/4.8.11.4/client/server_scripts/awg/Dockerfile
 RUN echo -e " \n\
     fs.file-max = 51200 \n\
     \n\
