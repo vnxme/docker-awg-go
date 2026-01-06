@@ -169,6 +169,10 @@ launch() {
 		else
 			DIR="$(dirname -- "${FILE}")"
 			if [ -d "${DIR}" ]; then
+				if [ -n "$(find "${DIR}" -maxdepth 0 -type d -empty)" ]; then
+					bash -- /app/configure.sh wg0
+				fi
+
 				local FILE; for FILE in ${DIR}/*.conf; do
 					awg-quick down "${FILE}" || true
 					awg-quick up "${FILE}" || true

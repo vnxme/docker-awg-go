@@ -74,7 +74,8 @@ WORKDIR /app
 # Ref: https://github.com/amnezia-vpn/amneziawg-tools/blob/v1.0.20250903/.github/workflows/linux-build.yml
 # Ref: https://github.com/amnezia-vpn/amneziawg-tools/blob/v1.0.20250903/src/Makefile
 RUN \
-    mkdir -p /usr/share/bash-completion/completions /usr/share/man/man8; \
+    mkdir -p /etc/amnezia/amneziawg /usr/share/bash-completion/completions /usr/share/man/man8; \
+    chmod 0700 /etc/amnezia/amneziawg; \
     chmod 0755 ./import/bin/*; \
     chmod 0644 ./import/completion/* ./import/man/*; \
     mv ./import/bin/*        /usr/bin/; \
@@ -120,64 +121,7 @@ RUN echo -e " \n\
     * hard nofile 51200 \n\
     " | sed -e 's/^\s\+//g' | tee -a /etc/security/limits.conf
 
-# Ref: https://github.com/amnezia-vpn/amnezia-client/blob/4.8.12.6/client/server_scripts/awg/configure_container.sh
-# Ref: https://github.com/amnezia-vpn/amnezia-client/blob/4.8.12.6/client/server_scripts/awg/template.conf
-RUN \
-    mkdir -p /etc/amnezia/amneziawg; \
-    chmod 0700 /etc/amnezia/amneziawg; \
-    cd /etc/amnezia/amneziawg; \
-    LOCAL_PRIVATE_KEY="$(wg genkey)"; \
-    echo "${LOCAL_PRIVATE_KEY}" > ./wg0_local_private.key; \
-    LOCAL_PUBLIC_KEY="$(echo "${LOCAL_PRIVATE_KEY}" | wg pubkey)"; \
-    echo "${LOCAL_PUBLIC_KEY}" > ./wg0_local_public.key; \
-    LOCAL_SHARED_KEY="$(wg genpsk)"; \
-    echo "${LOCAL_SHARED_KEY}" > ./wg0_shared.key; \
-    echo -e "\
-    [Interface]\n\
-    PrivateKey = ${LOCAL_PRIVATE_KEY}\n\
-    Address = {LOCAL_ADDR_IPV4}/{LOCAL_MASK_IPV4}, {LOCAL_ADDR_IPV6}/{LOCAL_MASK_IPV6}\n\
-    ListenPort = {LOCAL_PORT}\n\
-    Jc = {JUNK_PACKET_COUNT}\n\
-    Jmin = {JUNK_PACKET_MIN_SIZE}\n\
-    Jmax = {JUNK_PACKET_MAX_SIZE}\n\
-    S1 = {INIT_PACKET_JUNK_SIZE}\n\
-    S2 = {RESPONSE_PACKET_JUNK_SIZE}\n\
-    H1 = {INIT_PACKET_MAGIC_HEADER}\n\
-    H2 = {RESPONSE_PACKET_MAGIC_HEADER}\n\
-    H3 = {UNDERLOAD_PACKET_MAGIC_HEADER}\n\
-    H4 = {TRANSPORT_PACKET_MAGIC_HEADER}\n\
-    " | sed -e 's/^\s\+//g' > ./wg0.conf; \
-    echo -e "\
-    [Interface]\n\
-    Address = {REMOTE_ADDR_IPV4}/32, {REMOTE_ADDR_IPV6}/128\n\
-    DNS = {PRIMARY_DNS}, {SECONDARY_DNS}\n\
-    PrivateKey = {REMOTE_PRIVATE_KEY}\n\
-    Jc = {JUNK_PACKET_COUNT}\n\
-    Jmin = {JUNK_PACKET_MIN_SIZE}\n\
-    Jmax = {JUNK_PACKET_MAX_SIZE}\n\
-    S1 = {INIT_PACKET_JUNK_SIZE}\n\
-    S2 = {RESPONSE_PACKET_JUNK_SIZE}\n\
-    S3 = {COOKIE_REPLY_PACKET_JUNK_SIZE}\n\
-    S4 = {TRANSPORT_PACKET_JUNK_SIZE}\n\
-    H1 = {INIT_PACKET_MAGIC_HEADER}\n\
-    H2 = {RESPONSE_PACKET_MAGIC_HEADER}\n\
-    H3 = {UNDERLOAD_PACKET_MAGIC_HEADER}\n\
-    H4 = {TRANSPORT_PACKET_MAGIC_HEADER}\n\
-    I1 = {SPECIAL_JUNK_1}\n\
-    I2 = {SPECIAL_JUNK_2}\n\
-    I3 = {SPECIAL_JUNK_3}\n\
-    I4 = {SPECIAL_JUNK_4}\n\
-    I5 = {SPECIAL_JUNK_5}\n\
-    \n\
-    [Peer]\n\
-    PublicKey = ${LOCAL_PUBLIC_KEY}\n\
-    PresharedKey = ${LOCAL_SHARED_KEY}\n\
-    AllowedIPs = 0.0.0.0/0, ::/0\n\
-    Endpoint = {LOCAL_ADDR}:{LOCAL_PORT}\n\
-    PersistentKeepalive = 25\n\
-    " | sed -e 's/^\s\+//g' > ./wg0.peer.conf.template
-
-COPY --chmod=0755 entrypoint.sh /app/
+COPY --chmod=0755 *.sh /app/
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["bash", "--", "/app/entrypoint.sh"]
