@@ -112,5 +112,3 @@ RUN echo -e " \n\
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["bash", "--", "/app/entrypoint.sh"]
-
-LABEL org.opencontainers.image.source=https://github.com/vnxme/docker-awg-go
