@@ -16,7 +16,7 @@ RUN \
     --mount=type=cache,target=/go/pkg \
     apk add --update --no-cache build-base git; \
     git clone --branch "${GO_BRANCH}" "${GO_REPO}" .; \
-    git reset --hard "${GO_COMMIT}"
+    git reset --hard "${GO_COMMIT}"; \
     CGO_ENABLED=1 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -trimpath -ldflags '-s -w -linkmode external -extldflags "-fno-PIC -static"' -v -o ./amneziawg-go
 
