@@ -35,7 +35,7 @@ H4 = {TRANSPORT_PACKET_MAGIC_HEADER}
 EOF
 
 # Ref: https://github.com/amnezia-vpn/amnezia-client/blob/4.8.12.6/client/server_scripts/awg/template.conf
-cat <<EOF > "./${IFACE}_peer_template.conf"
+cat <<EOF > "./${IFACE}_peer.conf.template"
 [Interface]
 Address = {REMOTE_ADDR_IPV4}/32, {REMOTE_ADDR_IPV6}/128
 DNS = {PRIMARY_DNS}, {SECONDARY_DNS}
