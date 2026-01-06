@@ -37,11 +37,11 @@ ARG TOOLS_COMMIT=5c6ffd6168f7c69199200a91803fa02e1b8c4152
 ARG TOOLS_REPO=https://github.com/amnezia-vpn/amneziawg-tools
 
 # Ref: https://github.com/amnezia-vpn/amneziawg-tools/blob/v1.0.20250903/.github/workflows/linux-build.yml
-RUN \
-    xx-apk add --update --no-cache build-base; \
-    git clone --branch "${TOOLS_BRANCH}" "${TOOLS_REPO}" .; \
-    git reset --hard "${TOOLS_COMMIT}"; \
-    cd src; make; xx-verify ./wg
+RUN set -eux && \
+    xx-apk add --update --no-cache build-base && \
+    git clone --branch "${TOOLS_BRANCH}" "${TOOLS_REPO}" . && \
+    git reset --hard "${TOOLS_COMMIT}" && \
+    cd src && make && xx-verify ./wg
 
 WORKDIR /app/export
 
