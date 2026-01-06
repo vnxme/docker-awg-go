@@ -5,7 +5,7 @@ FROM --platform=$BUILDPLATFORM tonistiigi/xx AS xx
 
 FROM --platform=$BUILDPLATFORM golang:${GOLANG_VERSION}-alpine AS builder
 
-RUN apk add clang git lld linux-headers
+RUN apk add build-base clang git lld linux-headers
 
 COPY --from=xx / /
 
