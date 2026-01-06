@@ -51,21 +51,9 @@ COPY --from=builder /app/export /app/import
 
 WORKDIR /app
 
-RUN \
-    mkdir -p /etc/amnezia/amneziawg /usr/share/bash-completion/completions /usr/share/man/man8; \
-    chmod 0700 /etc/amnezia/amneziawg; \
-    chmod 0755 ./import/bin/*; \
-    chmod 0644 ./import/completion/* ./import/man/*; \
-    mv ./import/bin/*        /usr/bin/; \
-    mv ./import/completion/* /usr/share/bash-completion/completions/; \
-    mv ./import/man/*        /usr/share/man/man8/; \
-    ln -s /usr/bin/awg       /usr/bin/wg; \
-    ln -s /usr/bin/awg-quick /usr/bin/wg-quick; \
-    rm -rf ./import; \
-    mkdir -p ./hooks/up ./hooks/down
-
-RUN EXTRAS=" \
+RUN DEPS=" \
     bash \
+    bash-completion \
     curl \
     dumb-init \
     iproute2 \
@@ -77,7 +65,23 @@ RUN EXTRAS=" \
     net-tools \
     openssl \
     vlan \
-    "; apk add --update --no-cache --virtual .extras ${EXTRAS}
+    "; \
+    apk add --update --no-cache --virtual .deps ${DEPS}; \
+    mkdir -p /etc/amnezia/amneziawg /usr/share/bash-completion/completions /usr/share/man/man8; \
+    chmod 0700 /etc/amnezia/amneziawg; \
+    chmod 0755 ./import/bin/*; \
+    chmod 0644 ./import/completion/* ./import/man/*; \
+    mv ./import/bin/*        /usr/bin/; \
+    mv ./import/completion/* /usr/share/bash-completion/completions/; \
+    mv ./import/man/*        /usr/share/man/man8/; \
+    ln -s /usr/bin/awg                                     /usr/bin/wg; \
+    ln -s /usr/bin/awg-quick                               /usr/bin/wg-quick; \
+    ln -s /usr/share/man/man8/awg.8                        /usr/share/man/man8/wg.8; \
+    ln -s /usr/share/man/man8/awg-quick.8                  /usr/share/man/man8/wg-quick.8; \
+    ln -s /usr/share/bash-completion/completions/awg       /usr/share/bash-completion/completions/wg; \
+    ln -s /usr/share/bash-completion/completions/awg-quick /usr/share/bash-completion/completions/wg-quick; \
+    rm -rf ./import; \
+    mkdir -p ./hooks/up ./hooks/down
 
 RUN echo -e " \n\
     fs.file-max = 51200 \n\
