@@ -73,8 +73,7 @@ RUN DEPS=" \
     vlan \
     "; \
     apk add --update --no-cache --virtual .deps ${DEPS}; \
-    mkdir -p /etc/amnezia/amneziawg /usr/share/bash-completion/completions /usr/share/man/man8; \
-    chmod 0700 /etc/amnezia/amneziawg; \
+    mkdir -p /usr/share/bash-completion/completions /usr/share/man/man8; \
     chmod 0755 ./import/bin/*; \
     chmod 0644 ./import/completion/* ./import/man/*; \
     mv ./import/bin/*        /usr/bin/; \
@@ -120,6 +119,63 @@ RUN echo -e " \n\
     * soft nofile 51200 \n\
     * hard nofile 51200 \n\
     " | sed -e 's/^\s\+//g' | tee -a /etc/security/limits.conf
+
+RUN \
+    mkdir -p /etc/amnezia/amneziawg; \
+    chmod 0700 /etc/amnezia/amneziawg; \
+    cd /etc/amnezia/amneziawg; \
+    LOCAL_PRIVATE_KEY="$(wg genkey)"; \
+    echo "${LOCAL_PRIVATE_KEY}" > ./wg0_local_private.key; \
+    LOCAL_PUBLIC_KEY="$(echo "${LOCAL_PRIVATE_KEY}" | wg pubkey)"; \
+    echo "${LOCAL_PUBLIC_KEY}" > ./wg0_local_public.key; \
+    LOCAL_SHARED_KEY="$(wg genpsk)"; \
+    echo "${LOCAL_SHARED_KEY}" > ./wg0_shared.key; \
+    cat > ./wg0.conf <<EOF
+    [Interface]
+    PrivateKey = ${LOCAL_PRIVATE_KEY}
+    Address = $AWG_SUBNET_IP/$WIREGUARD_SUBNET_CIDR
+    ListenPort = $AWG_SERVER_PORT
+    Jc = $JUNK_PACKET_COUNT
+    Jmin = $JUNK_PACKET_MIN_SIZE
+    Jmax = $JUNK_PACKET_MAX_SIZE
+    S1 = $INIT_PACKET_JUNK_SIZE
+    S2 = $RESPONSE_PACKET_JUNK_SIZE
+    H1 = $INIT_PACKET_MAGIC_HEADER
+    H2 = $RESPONSE_PACKET_MAGIC_HEADER
+    H3 = $UNDERLOAD_PACKET_MAGIC_HEADER
+    H4 = $TRANSPORT_PACKET_MAGIC_HEADER
+
+    EOF; \
+    cat > ./wg0.peer.conf.template <<EOF
+    [Interface]
+    Address = $WIREGUARD_CLIENT_IP/32
+    DNS = $PRIMARY_DNS, $SECONDARY_DNS
+    PrivateKey = $WIREGUARD_CLIENT_PRIVATE_KEY
+    Jc = $JUNK_PACKET_COUNT
+    Jmin = $JUNK_PACKET_MIN_SIZE
+    Jmax = $JUNK_PACKET_MAX_SIZE
+    S1 = $INIT_PACKET_JUNK_SIZE
+    S2 = $RESPONSE_PACKET_JUNK_SIZE
+    S3 = $COOKIE_REPLY_PACKET_JUNK_SIZE
+    S4 = $TRANSPORT_PACKET_JUNK_SIZE
+    H1 = $INIT_PACKET_MAGIC_HEADER
+    H2 = $RESPONSE_PACKET_MAGIC_HEADER
+    H3 = $UNDERLOAD_PACKET_MAGIC_HEADER
+    H4 = $TRANSPORT_PACKET_MAGIC_HEADER
+    I1 = $SPECIAL_JUNK_1
+    I2 = $SPECIAL_JUNK_2
+    I3 = $SPECIAL_JUNK_3
+    I4 = $SPECIAL_JUNK_4
+    I5 = $SPECIAL_JUNK_5
+
+    [Peer]
+    PublicKey = ${LOCAL_PUBLIC_KEY}
+    PresharedKey = ${LOCAL_SHARED_KEY}
+    AllowedIPs = 0.0.0.0/0, ::/0
+    Endpoint = $SERVER_IP_ADDRESS:$AWG_SERVER_PORT
+    PersistentKeepalive = 25
+
+    EOF
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["bash", "--", "/app/entrypoint.sh"]
