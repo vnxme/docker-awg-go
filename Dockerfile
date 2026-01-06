@@ -18,11 +18,11 @@ RUN \
     --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
     CGO_ENABLED=1 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -trimpath -ldflags '-s -w -linkmode external -extldflags "-fno-PIC -static"' -v -o /usr/bin/amneziawg-go
+    go build -trimpath -ldflags '-s -w -linkmode external -extldflags "-fno-PIC -static"' -v -o ./amneziawg-go
 
 FROM alpine:${ALPINE_VERSION}
 
-COPY --from=builder --chmod=0755 /usr/bin/amneziawg-go /usr/bin/
+COPY --from=builder --chmod=0755 /app/go/amneziawg-go /usr/bin/
 
 ARG AWGTOOLS_RELEASE="1.0.20250901"
 
