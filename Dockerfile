@@ -39,12 +39,12 @@ WORKDIR /app/export
 # Ref: https://github.com/amnezia-vpn/amneziawg-tools/blob/v1.0.20250903/.github/workflows/linux-build.yml
 # Ref: https://github.com/amnezia-vpn/amneziawg-tools/blob/v1.0.20250903/src/Makefile
 RUN \
-    mkdir -p ./bin ./completion ./man; \
+    mkdir -p bin com man; \
     mv /app/go/amneziawg-go                               ./bin/amneziawg-go; \
     mv /app/tools/src/wg                                  ./bin/awg; \
     mv /app/tools/src/wg-quick/linux.bash                 ./bin/awg-quick; \
-    cp /app/tools/src/completion/wg.bash-completion       ./completion/awg; \
-    cp /app/tools/src/completion/wg-quick.bash-completion ./completion/awg-quick; \
+    cp /app/tools/src/completion/wg.bash-completion       ./com/awg; \
+    cp /app/tools/src/completion/wg-quick.bash-completion ./com/awg-quick; \
     cp /app/tools/src/man/wg.8                            ./man/awg.8; \
     cp /app/tools/src/man/wg-quick.8                      ./man/awg-quick.8
 
@@ -67,27 +67,21 @@ RUN DEPS=" \
     "; \
     apk add --update --no-cache --virtual .deps ${DEPS}
 
-COPY --from=builder /app/export /app/import
-
-WORKDIR /app
+COPY --from=builder --chmod=0755 /app/export/bin/* /usr/bin/
+COPY --from=builder --chmod=0644 /app/export/com/* /usr/share/bash-completion/completions/
+COPY --from=builder --chmod=0644 /app/export/man/* /usr/share/man/man8/
 
 # Ref: https://github.com/amnezia-vpn/amneziawg-tools/blob/v1.0.20250903/.github/workflows/linux-build.yml
 # Ref: https://github.com/amnezia-vpn/amneziawg-tools/blob/v1.0.20250903/src/Makefile
 RUN \
-    mkdir -p /etc/amnezia/amneziawg /usr/share/bash-completion/completions /usr/share/man/man8; \
-    chmod 0700 /etc/amnezia/amneziawg; \
-    chmod 0755 ./import/bin/*; \
-    chmod 0644 ./import/completion/* ./import/man/*; \
-    mv ./import/bin/*        /usr/bin/; \
-    mv ./import/completion/* /usr/share/bash-completion/completions/; \
-    mv ./import/man/*        /usr/share/man/man8/; \
     ln -s /usr/bin/awg                                     /usr/bin/wg; \
     ln -s /usr/bin/awg-quick                               /usr/bin/wg-quick; \
     ln -s /usr/share/man/man8/awg.8                        /usr/share/man/man8/wg.8; \
     ln -s /usr/share/man/man8/awg-quick.8                  /usr/share/man/man8/wg-quick.8; \
     ln -s /usr/share/bash-completion/completions/awg       /usr/share/bash-completion/completions/wg; \
     ln -s /usr/share/bash-completion/completions/awg-quick /usr/share/bash-completion/completions/wg-quick; \
-    rm -rf ./import
+    mkdir -p /etc/amnezia/amneziawg; \
+    chmod 0700 /etc/amnezia/amneziawg
 
 #Ref: https://github.com/amnezia-vpn/amnezia-client/blob/4.8.12.6/client/server_scripts/awg/Dockerfile
 RUN echo -e " \n\
@@ -122,6 +116,8 @@ RUN echo -e " \n\
     " | sed -e 's/^\s\+//g' | tee -a /etc/security/limits.conf
 
 COPY --chmod=0755 *.sh /app/
+
+WORKDIR /app
 
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
 CMD ["bash", "--", "/app/entrypoint.sh"]
