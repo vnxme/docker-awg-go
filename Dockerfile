@@ -9,8 +9,10 @@ ARG GO_BRANCH=master
 ARG GO_COMMIT=449d7cffd4adf86971bd679d0be5384b443e8be5
 ARG GO_REPO=https://github.com/amnezia-vpn/amneziawg-go
 
-RUN apk add --update --no-cache build-base git; \
-    git clone --branch "${GO_BRANCH}" "${GO_REPO}" /app/go; git reset --hard "${GO_COMMIT}"
+RUN \
+    apk add --update --no-cache build-base git; \
+    git clone --branch "${GO_BRANCH}" "${GO_REPO}" .; \
+    git reset --hard "${GO_COMMIT}"
 
 ARG TARGETARCH TARGETOS
 
@@ -20,17 +22,26 @@ RUN \
     CGO_ENABLED=1 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -trimpath -ldflags '-s -w -linkmode external -extldflags "-fno-PIC -static"' -v -o ./amneziawg-go
 
+WORKDIR /app/tools
+
+ARG TOOLS_BRANCH=master
+ARG TOOLS_COMMIT=5c6ffd6168f7c69199200a91803fa02e1b8c4152
+ARG TOOLS_REPO=https://github.com/amnezia-vpn/amneziawg-tools
+
+RUN \
+    apk add --update --no-cache linux-headers; \
+    git clone --branch "${TOOLS_BRANCH}" "${TOOLS_REPO}" .; \
+    git reset --hard "${TOOLS_COMMIT}"; \
+    cd src; make; cd -
+
 FROM alpine:${ALPINE_VERSION}
 
-COPY --from=builder --chmod=0755 /app/go/amneziawg-go /usr/bin/
+COPY --from=builder --chmod=0755 /app/go/amneziawg-go               /usr/bin/amneziawg-go
+COPY --from=builder --chmod=0755 /app/tools/src/wg                  /usr/bin/awg
+COPY --from=builder --chmod=0755 /app/tools/src/wg-quick/linux.bash /usr/bin/awg-quick
 
-ARG AWGTOOLS_RELEASE="1.0.20250901"
-
-RUN cd /usr/bin/ && \
-    wget https://github.com/amnezia-vpn/amneziawg-tools/releases/download/v${AWGTOOLS_RELEASE}/alpine-3.19-amneziawg-tools.zip && \
-    unzip -j alpine-3.19-amneziawg-tools.zip && \
-    chmod +x /usr/bin/awg /usr/bin/awg-quick && \
-    ln -s /usr/bin/awg /usr/bin/wg && \
+RUN \
+    ln -s /usr/bin/awg       /usr/bin/wg; \
     ln -s /usr/bin/awg-quick /usr/bin/wg-quick
 
 RUN EXTRAS=" \
