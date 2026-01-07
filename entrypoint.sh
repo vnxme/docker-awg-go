@@ -170,7 +170,9 @@ launch() {
 			DIR="$(dirname -- "${FILE}")"
 			if [ -d "${DIR}" ]; then
 				if [ -n "$(find "${DIR}" -maxdepth 0 -type d -empty)" ]; then
+					cd -- "${DIR}"
 					bash -- /app/configure.sh wg0
+					cd -
 				fi
 
 				local FILE; for FILE in ${DIR}/*.conf; do
