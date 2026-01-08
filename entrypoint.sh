@@ -8,18 +8,11 @@
 # PRIVATE_IPV4 - [semicolon separated CIDRs] - IPv4 ranges to masquerade outgoing traffic from
 # PRIVATE_IPV6 - [semicolon separated CIDRs] - IPv6 ranges to masquerade outgoing traffic from
 #
-# Routing Daemon (bird)
-# - BIRD_ARGS   -                     - custom args
-# - BIRD_CONFIG - /etc/bird/bird.conf - config path
-#
 # AmneziaWG Daemon (amneziawg-go)
 # - AWG_CONFIG - /etc/amnezia/wg0.conf - config path
 #
 # Note: if ${AWG_CONFIG} doesn't exist, but its directory does,
 # the script runs `awg-quick up` with each *.conf found in this directory.
-#
-# Other Apps
-# - OTHER_APPS - [semicolon separated commands] - custom commands to run with `bash -c`
 
 PIDS=()
 TUNS=()
@@ -150,15 +143,6 @@ launch() {
 	# Call up hooks
 	hooks "up"
 
-	# Launch a bird instance if it's installed
-	if [ -n "$(which bird)" ]; then
-		local FILE="${BIRD_CONFIG:-/etc/bird/bird.conf}"
-		if [ -s "${FILE}" ]; then
-			bird -c "${FILE}" -f -R ${BIRD_ARGS:-} &
-			PIDS+=($!)
-		fi
-	fi
-
 	# Launch one or multiple awg instances
 	if [ -n "$(which awg)" ] && [ -n "$(which awg-quick)" ] && [ -n "$(which amneziawg-go)" ]; then
 		local FILE="${AWG_CONFIG:-/etc/amnezia/amneziawg/wg0.conf}"
@@ -183,18 +167,6 @@ launch() {
 			fi
 		fi
 	fi
-
-	# Launch other background apps if requested
-	local APPS
-	if [ "$#" -gt 0 ]; then
-		APPS=("$@")
-	elif [ -n "${OTHER_APPS:-}" ]; then
-		IFS=';' read -r -a APPS <<< "${OTHER_APPS}"
-	fi
-	local APP; for APP in "${APPS[@]}"; do
-		bash -c "${APP}" &
-		PIDS+=($!)
-	done
 
 	# Launch one empty process to keep this script running
 	tail -f /dev/null &
