@@ -92,13 +92,7 @@ RUN DEPS=" \
     net-tools \
     openssl \
     "; \
-    apk add --update --no-cache --virtual .deps ${DEPS}
-
-COPY --from=builder --chmod=0755 /app/export/bin/* /usr/bin/
-COPY --from=builder --chmod=0644 /app/export/com/* /usr/share/bash-completion/completions/
-COPY --from=builder --chmod=0644 /app/export/man/* /usr/share/man/man8/
-
-RUN \
+    apk add --update --no-cache --virtual .deps ${DEPS}; \
     ln -s /usr/bin/awg                                     /usr/bin/wg && \
     ln -s /usr/bin/awg-quick                               /usr/bin/wg-quick && \
     ln -s /usr/share/man/man8/awg.8                        /usr/share/man/man8/wg.8 && \
@@ -108,9 +102,13 @@ RUN \
     mkdir -p /etc/amnezia/amneziawg && \
     chmod 0700 /etc/amnezia/amneziawg
 
-COPY --chmod=0755 *.sh /app/
+COPY --from=builder --chmod=0644 /app/export/com/* /usr/share/bash-completion/completions/
+COPY --from=builder --chmod=0644 /app/export/man/* /usr/share/man/man8/
+COPY --from=builder --chmod=0755 /app/export/bin/* /usr/bin/
+
 COPY --chmod=0644 limits.conf /etc/security/limits.conf
 COPY --chmod=0644 sysctl.conf /etc/sysctl.d/50-awg.conf
+COPY --chmod=0755 *.sh /app/
 
 WORKDIR /app
 
