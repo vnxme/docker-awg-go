@@ -8,16 +8,24 @@
 # PRIVATE_IPV4 - [semicolon separated CIDRs] - IPv4 ranges to masquerade outgoing traffic from
 # PRIVATE_IPV6 - [semicolon separated CIDRs] - IPv6 ranges to masquerade outgoing traffic from
 #
-# AmneziaWG Daemon (amneziawg-go)
-# - AWG_CONFIG - /etc/amnezia/wg0.conf - config path
+# VARIABLE   # DESCRIPTION                                 # DEFAULT VALUE          #
+# ---------- # ------------------------------------------- # ---------------------- #
+# CONFS_DEF  # the default interface name                  # wg0                    #
+# CONFS_DIR  # the configuration directory                 # /etc/amnezia/amneziawg #
+# CONFS_LIST # the comma-separated list of interface names # ${CONFS_DEF}           #
+# HOOKS_DIR  # the pre/post-up/down hook scripts directory # ./hooks                #
 #
-# Note: if ${AWG_CONFIG} doesn't exist, but its directory does,
-# the script runs `awg-quick up` with each *.conf found in this directory.
+# Note: if ${CONFS_DIR} exists and no non-empty configuration files are found in it
+# according to ${CONFS_LIST}, the script runs the daemon with each non-empty *.conf
+# file. The script creates a new configuration if there are no *.conf files at all.
 
+CONFS_DEF="${CONFS_DEF:-wg0}"
+CONFS_DIR="${CONFS_DIR:-/etc/amnezia/amneziawg}"
+CONFS_LIST="${CONFS_LIST:-${CONFS_DEF}}"
 HOOKS_DIR="${HOOKS_DIR:-./hooks}"
 
 PIDS=()
-TUNS=()
+FILES=()
 
 firewall_up() {
 	local M="${MASQUERADE,,:-}"
@@ -145,28 +153,30 @@ launch() {
 	# Call pre-up hooks
 	hooks "pre-up"
 
-	# Launch one or multiple awg instances
+	# Launch one or multiple tunnels
 	if [ -n "$(which awg)" ] && [ -n "$(which awg-quick)" ] && [ -n "$(which amneziawg-go)" ]; then
-		local FILE="${AWG_CONFIG:-/etc/amnezia/amneziawg/wg0.conf}"
-		if [ -s "${FILE}" ]; then
-			awg-quick down "${FILE}" || true
-			awg-quick up "${FILE}" || true
-			TUNS+=("${FILE}")
-		else
-			DIR="$(dirname -- "${FILE}")"
-			if [ -d "${DIR}" ]; then
-				if [ -n "$(find "${DIR}" -maxdepth 0 -type d -empty)" ]; then
-					cd -- "${DIR}"
-					bash -- /app/configure.sh wg0
-					cd -
-				fi
+		local CONFS; IFS=',' read -r -a CONFS <<< "${CONFS_LIST}"
+		local CONF; for CONF in "${CONFS[@]}"; do
+			local FILE="${CONFS_DIR}/${CONF}.conf"
+			if [ -s "${FILE}" ]; then
+				awg-quick down "${FILE}" || true
+				awg-quick up "${FILE}" || true
+				FILES+=("${FILE}")
+			fi
+		done
 
-				local FILE; for FILE in ${DIR}/*.conf; do
+		if [ ${#FILES[@]} -eq 0 ] && [ -d "${CONFS_DIR}" ]; then
+			if [ -n "$(find "${CONFS_DIR}" -maxdepth 0 -type d -empty)" ]; then
+				cd -- "${CONFS_DIR}" && bash -- /app/configure.sh "${CONFS_DEF}" && cd -
+			fi
+
+			local FILE; for FILE in "${CONFS_DIR}"/*.conf; do
+				if [ -s "${FILE}" ]; then
 					awg-quick down "${FILE}" || true
 					awg-quick up "${FILE}" || true
-					TUNS+=("${FILE}")
-				done
-			fi
+					FILES+=("${FILE}")
+				fi
+			done
 		fi
 	fi
 
@@ -182,9 +192,9 @@ terminate() {
 	# Call pre-down hooks
 	hooks "pre-down"
 
-	# Disable all tunnels
-	local TUN; for TUN in "${TUNS[@]}"; do
-		awg-quick down "${TUN}" || true
+	# Terminate all tunnels
+	local FILE; for FILE in "${FILES[@]}"; do
+		awg-quick down "${FILE}" || true
 	done
 
 	# Terminate all subprocesses
