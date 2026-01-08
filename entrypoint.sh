@@ -67,7 +67,7 @@ launch() {
 
 		if [ ${#FILES[@]} -eq 0 ] && [ -d "${CONF_DIR}" ]; then
 			if [ -n "$(find "${CONF_DIR}" -maxdepth 0 -type d -empty)" ]; then
-				cd -- "${CONF_DIR}" && bash -- /app/configure.sh "${CONF_DEF}" && cd -
+				cd -- "${CONF_DIR}" && bash -- /app/configure.sh new "${CONF_DEF}" && cd -
 			fi
 
 			local FILE; for FILE in "${CONF_DIR}"/*.conf; do
