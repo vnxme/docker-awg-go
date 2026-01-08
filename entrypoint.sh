@@ -100,10 +100,6 @@ terminate() {
 	# Call post-down hooks
 	hooks "post-down"
 
-	# Restore firewall and forwarding
-	forwarding_down
-	firewall_down
-
 	exit 0
 }
 
