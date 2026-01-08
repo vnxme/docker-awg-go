@@ -16,20 +16,20 @@
 
 # Supported environment variables:
 #
-# VARIABLE  # DESCRIPTION                                 # DEFAULT VALUE          #
-# --------- # ------------------------------------------- # ---------------------- #
-# CONF_DEF  # the default interface name                  # wg0                    #
-# CONF_DIR  # the configuration directory                 # /etc/amnezia/amneziawg #
-# CONF_LIST # the comma-separated list of interface names # ${CONF_DEF}            #
-# HOOK_DIR  # the pre/post-up/down hook scripts directory # ./hooks                #
+# VARIABLE # DESCRIPTION                                        # DEFAULT VALUE          #
+# -------- # -------------------------------------------------- # ---------------------- #
+# CONF_DEF # the default interface name to create and/or run    # wg0                    #
+# CONF_DIR # the configuration directory                        # /etc/amnezia/amneziawg #
+# CONF_RUN # the comma-separated list of interface names to run # ${CONF_DEF}            #
+# HOOK_DIR # the pre/post-up/down hook scripts directory        # ./hooks                #
 #
 # Note: if ${CONF_DIR} exists and no non-empty configuration files are found in it
-# according to ${CONF_LIST}, the script runs the daemon with each non-empty *.conf
+# according to ${CONF_RUN}, the script runs the daemon with each non-empty *.conf
 # file. The script creates a new configuration if there are no *.conf files at all.
 
 CONF_DEF="${CONF_DEF:-wg0}"
 CONF_DIR="${CONF_DIR:-/etc/amnezia/amneziawg}"
-CONF_LIST="${CONF_LIST:-${CONF_DEF}}"
+CONF_RUN="${CONF_RUN:-${CONF_DEF}}"
 HOOK_DIR="${HOOK_DIR:-./hooks}"
 
 PIDS=()
@@ -50,7 +50,7 @@ launch() {
 
 	# Launch one or multiple tunnels
 	if [ -n "$(which awg)" ] && [ -n "$(which awg-quick)" ] && [ -n "$(which amneziawg-go)" ]; then
-		local CONFS; IFS=',' read -r -a CONFS <<< "${CONF_LIST}"
+		local CONFS; IFS=',' read -r -a CONFS <<< "${CONF_RUN}"
 		local CONF; for CONF in "${CONFS[@]}"; do
 			local FILE="${CONF_DIR}/${CONF}.conf"
 			if [ -s "${FILE}" ]; then
