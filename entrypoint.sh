@@ -45,6 +45,11 @@ hooks() {
 }
 
 launch() {
+	# Display a warning about the arguments
+	if [ $# -gt 0 ]; then
+		echo "$(basename -- "$0"): Warning: No command line arguments are supported. Ignoring them"
+	fi 
+
 	# Call pre-up hooks
 	hooks "pre-up"
 
