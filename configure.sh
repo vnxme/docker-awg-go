@@ -74,7 +74,7 @@ new() {
 	while true; do
 		LOCAL_PORT="$(shuf -i 1024-49151 -n 1)"
 		for LOCAL_PORT_IN_USE in "${LOCAL_PORTS_IN_USE[@]}"; do
-			if [ "${LOCAL_PORT_IN_USE}" -eq "${LOCAL_PORT}" ]; then
+			if [ "${LOCAL_PORT_IN_USE}" == "${LOCAL_PORT}" ]; then
 				continue 2
 			fi
 		done
