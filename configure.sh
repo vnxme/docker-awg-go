@@ -94,6 +94,18 @@ new() {
 	if [ -z "${LOCAL_IPV6_IFACE}" ] || [ -n "$(ifconfig "${LOCAL_IPV6_IFACE}" | grep 'not found')" ]; then
 		LOCAL_IPV6_IFACE="${LOCAL_IPV4_IFACE}"
 	fi
+
+	# Choose the iptables flavour
+	local IPT_MODULES_NEW="$(lsmod | grep -E "^nft_")"
+	local IPT_MODULES_OLD="$(lsmod | grep -E "^iptable_")"
+	local IPT4="iptables"
+	local IPT6="ip6tables"
+	if [ -z "${IPT_MODULES_NEW}" ] && [ -n "${IPT_MODULES_OLD}" ]; then
+		IPT4="iptables-legacy"
+		IPT6="ip6tables-legacy"
+	elif [ -n "${IPT_MODULES_NEW}" ] && [ -z "${IPT_MODULES_OLD}" ]; then
+		IPT4="iptables-nft"
+		IPT6="ip6tables-nft"
 	fi
 
 	# Refer to the following documents for the recommended values:
@@ -178,6 +190,18 @@ new() {
 	H2 = ${RESPONSE_PACKET_MAGIC_HEADER}
 	H3 = ${UNDERLOAD_PACKET_MAGIC_HEADER}
 	H4 = ${TRANSPORT_PACKET_MAGIC_HEADER}
+	PreUp = ${IPT4} -t filter -A FORWARD -i %i -j ACCEPT || true
+	PreUp = ${IPT4} -t filter -A FORWARD -o %i -j ACCEPT || true
+	PreUp = ${IPT4} -t nat -A POSTROUTING -s ${LOCAL_IPV4_NET}/${LOCAL_IPV4_MASK} -o ${LOCAL_IPV4_IFACE} -j MASQUERADE || true
+	PreUp = ${IPT6} -t filter -A FORWARD -i %i -j ACCEPT || true
+	PreUp = ${IPT6} -t filter -A FORWARD -o %i -j ACCEPT || true
+	PreUp = ${IPT6} -t nat -A POSTROUTING -s ${LOCAL_IPV6_NET}/${LOCAL_IPV6_MASK} -o ${LOCAL_IPV6_IFACE} -j MASQUERADE || true
+	PostDown = ${IPT4} -t filter -D FORWARD -i %i -j ACCEPT || true
+	PostDown = ${IPT4} -t filter -D FORWARD -o %i -j ACCEPT || true
+	PostDown = ${IPT4} -t nat -D POSTROUTING -s ${LOCAL_IPV4_NET}/${LOCAL_IPV4_MASK} -o ${LOCAL_IPV4_IFACE} -j MASQUERADE || true
+	PostDown = ${IPT6} -t filter -D FORWARD -i %i -j ACCEPT || true
+	PostDown = ${IPT6} -t filter -D FORWARD -o %i -j ACCEPT || true
+	PostDown = ${IPT6} -t nat -D POSTROUTING -s ${LOCAL_IPV6_NET}/${LOCAL_IPV6_MASK} -o ${LOCAL_IPV6_IFACE} -j MASQUERADE || true 
 	EOF
 
 	# Ref: https://github.com/amnezia-vpn/amnezia-client/blob/4.8.12.6/client/server_scripts/awg/template.conf
