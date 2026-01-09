@@ -62,8 +62,8 @@ launch() {
 		local CONF; for CONF in "${CONFS[@]}"; do
 			local FILE="${CONF_DIR}/${CONF}.conf"
 			if [ -s "${FILE}" ]; then
-				awg-quick down "${FILE}" || true
-				awg-quick up "${FILE}" || true
+				awg-quick down "${FILE}" > /dev/null 2>&1 || true
+				awg-quick up "${FILE}" > /dev/null 2>&1 || true
 				FILES+=("${FILE}")
 			fi
 		done
@@ -75,8 +75,8 @@ launch() {
 
 			local FILE; for FILE in "${CONF_DIR}"/*.conf; do
 				if [ -s "${FILE}" ]; then
-					awg-quick down "${FILE}" || true
-					awg-quick up "${FILE}" || true
+					awg-quick down "${FILE}" > /dev/null 2>&1 || true
+					awg-quick up "${FILE}" > /dev/null 2>&1 || true
 					FILES+=("${FILE}")
 				fi
 			done
