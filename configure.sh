@@ -82,7 +82,18 @@ new() {
 	# Obtain a local public IPv4 via the ipify API, or get the address of the interface used for internet access
 	local LOCAL_ADDR="$(curl -s https://api.ipify.org)"
 	if [ $? -ne 0 ]; then
-		LOCAL_ADDR="$(ip route get 1.1.1.1 | head -1 | awk '{print $7}')"
+		LOCAL_ADDR="$(ip route get "1.1.1.1" | head -1 | awk '{print $7}')"
+	fi
+
+	# Obtain IPv4 and IPv6 default route interfaces
+	local LOCAL_IPV4_IFACE="${ip route get "1.1.1.1" | head -1 | awk '{print $5}'}"
+	if [ -z "${LOCAL_IPV4_IFACE}" ] || [ -n "$(ifconfig "${LOCAL_IPV4_IFACE}" | grep 'not found')" ]; then
+		LOCAL_IPV4_IFACE="eth0"
+	fi
+	local LOCAL_IPV6_IFACE="${ip route get "2606:4700:4700::1111" | head -1 | awk '{print $5}'}"
+	if [ -z "${LOCAL_IPV6_IFACE}" ] || [ -n "$(ifconfig "${LOCAL_IPV6_IFACE}" | grep 'not found')" ]; then
+		LOCAL_IPV6_IFACE="${LOCAL_IPV4_IFACE}"
+	fi
 	fi
 
 	# Refer to the following documents for the recommended values:
