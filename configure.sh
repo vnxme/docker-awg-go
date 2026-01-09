@@ -209,9 +209,9 @@ new() {
 	# Ref: https://github.com/amnezia-vpn/amnezia-client/blob/4.8.12.6/client/server_scripts/awg/template.conf
 	cat <<-EOF > "./${IFACE}/remote.conf.template"
 	[Interface]
-	Address = {REMOTE_IPV4_ADDR}/32, {REMOTE_IPV6_ADDR}/128
-	DNS = {PRIMARY_DNS}, {SECONDARY_DNS}
 	PrivateKey = {REMOTE_PRIVATE_KEY}
+	Address = {REMOTE_IPV4_ADDR}/${LOCAL_IPV4_MASK}, {REMOTE_IPV6_ADDR}/${LOCAL_IPV6_MASK}
+	DNS = {PRIMARY_DNS}, {SECONDARY_DNS}
 	Jc = ${JUNK_PACKET_COUNT}
 	Jmin = ${JUNK_PACKET_MIN_SIZE}
 	Jmax = ${JUNK_PACKET_MAX_SIZE}
