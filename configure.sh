@@ -347,7 +347,28 @@ new() {
 
 peer() {
 	local IFACE="$1"
+	if [ -z "${IFACE}" ]; then
+		echo "$(basename -- "$0"): Error: An interface name must be provided. Exiting"
+		exit 1
+	fi
+	if [ ! -s "./${IFACE}.conf" ] || [ ! -d "./${IFACE}" ]; then
+		echo "$(basename -- "$0"): Error: The interface must exist. Exiting"
+		exit 1
+	fi
+	if [ ! -s "./${IFACE}/remote.conf.template" ] || [ ! -s "./${IFACE}/peer.conf.template" ]; then
+		echo "$(basename -- "$0"): Error: The interface must have templates. Exiting"
+		exit 1
+	fi
+
 	local REMOTE_NAME="$2"
+	if [ -z "${REMOTE_NAME}" ]; then
+		echo "$(basename -- "$0"): Error: A peer name must be provided. Exiting"
+		exit 1
+	fi
+	if [ -s "./${IFACE}/${REMOTE_NAME}.conf" ] || [ -n "$(cat "./${IFACE}.conf" | grep -E "^# Name = ${REMOTE_NAME}$")" ]; then
+		echo "$(basename -- "$0"): Error: The peer name already exists. Exiting"
+		exit 1
+	fi
 
 	local LOCAL_ADDRESSES=($(cat "./${IFACE}.conf" | grep -E "^Address = " | tr -s ' ,' ' ' | cut -d' ' -f 3-))
 	local REMOTE_N="$(($(find "./${IFACE}" -type f -name "*.conf" | wc -l) + 2))"
