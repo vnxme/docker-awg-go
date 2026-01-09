@@ -14,6 +14,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Ref: https://filipenf.github.io/2015/12/06/bash-calculating-ip-addresses/
+# Receives an IPv4/mask parameter and returns the nth IPv4 in that range
+get_nth_ipv4() {
+	# Converts an int to an IPv4 netmask as 24 -> 255.255.255.0
+	netmask() {
+		local mask=$((0xffffffff << (32 - $1))); shift
+		local ip n
+		for n in 1 2 3 4; do
+			ip=$((mask & 0xff))${ip:+.}$ip
+			mask=$((mask >> 8))
+		done
+		echo "${ip}"
+	}
+
+	local i1 i2 i3 i4 mask m1 m2 m3 m4
+	IFS=". /" read -r i1 i2 i3 i4 mask <<< "$1"
+	IFS=" ." read -r m1 m2 m3 m4 <<< "$(netmask "${mask}")"
+	printf "%d.%d.%d.%d\n" "$((i1 & m1))" "$((i2 & m2))" "$((i3 & m3))" "$(($2 + (i4 & m4)))"
+}
+
 new() {
 	local IFACE="$1"
 	if [ -z "${IFACE}" ]; then
@@ -33,6 +53,19 @@ new() {
 	local LOCAL_PUBLIC_KEY="$(echo "${LOCAL_PRIVATE_KEY}" | awg pubkey)"
 	echo "${LOCAL_PUBLIC_KEY}" > "./${IFACE}/local_public.key"
 
+	# Choose a local 24-bit IPv4 subnet from the 192.168.0.0/16 block based on the first byte of the public key
+	local LOCAL_IPV4_BYTE="$(echo "${LOCAL_PUBLIC_KEY}" | base64 -d | dd bs=1 count=1 skip=0 status=none | xxd -p)"
+	local LOCAL_IPV4_NET="192.168.$((16#${LOCAL_IPV4_BYTE})).0"
+	local LOCAL_IPV4_MASK="24"
+	local LOCAL_IPV4_ADDR="$(get_nth_ipv4 "${LOCAL_IPV4_NET}/${LOCAL_IPV4_MASK}" 1)"
+
+	# Choose a local 64-bit IPv6 subnet from the fd00::/8 block based on bytes 1-8 of the public key
+	local LOCAL_IPV6_BYTES="$(echo "${LOCAL_PUBLIC_KEY}" | base64 -d | dd bs=1 count=7 skip=1 status=none | xxd -p)"
+	local LOCAL_IPV6_NET="fd${LOCAL_IPV6_BYTES:0:2}:${LOCAL_IPV6_BYTES:2:4}:${LOCAL_IPV6_BYTES:6:4}:${LOCAL_IPV6_BYTES:10:4}::"
+	local LOCAL_IPV6_MASK="$((128 - (32 - LOCAL_IPV4_MASK)))" # Make IPv4 and IPv6 subnets equally sized
+	local LOCAL_IPV6_ADDR="${LOCAL_IPV6_NET}$(printf '%x' 1)"
+
+	# Choose a local port from the registered/user ports
 	local LOCAL_PORT="$(shuf -i 1024-49151 -n 1)"
 
 	# Refer to the following documents for the recommended values:
@@ -104,7 +137,7 @@ new() {
 	cat <<-EOF > "./${IFACE}.conf"
 	[Interface]
 	PrivateKey = ${LOCAL_PRIVATE_KEY}
-	Address = {LOCAL_ADDR_IPV4}/{LOCAL_MASK_IPV4}, {LOCAL_ADDR_IPV6}/{LOCAL_MASK_IPV6}
+	Address = ${LOCAL_IPV4_ADDR}/${LOCAL_IPV4_MASK}, ${LOCAL_IPV6_ADDR}/${LOCAL_IPV6_MASK}
 	ListenPort = ${LOCAL_PORT}
 	Jc = ${JUNK_PACKET_COUNT}
 	Jmin = ${JUNK_PACKET_MIN_SIZE}
@@ -122,7 +155,7 @@ new() {
 	# Ref: https://github.com/amnezia-vpn/amnezia-client/blob/4.8.12.6/client/server_scripts/awg/template.conf
 	cat <<-EOF > "./${IFACE}/remote.conf.template"
 	[Interface]
-	Address = {REMOTE_ADDR_IPV4}/32, {REMOTE_ADDR_IPV6}/128
+	Address = {REMOTE_IPV4_ADDR}/32, {REMOTE_IPV6_ADDR}/128
 	DNS = {PRIMARY_DNS}, {SECONDARY_DNS}
 	PrivateKey = {REMOTE_PRIVATE_KEY}
 	Jc = ${JUNK_PACKET_COUNT}
@@ -155,7 +188,7 @@ new() {
 	[Peer]
 	PublicKey = {REMOTE_PUBLIC_KEY}
 	PresharedKey = {REMOTE_PRESHARED_KEY}
-	AllowedIPs = {REMOTE_ADDR_IPV4}/32, {REMOTE_ADDR_IPV6}/128
+	AllowedIPs = {REMOTE_IPV4_ADDR}/32, {REMOTE_IPV6_ADDR}/128
 	PersistentKeepalive = 25
 	EOF
 }
