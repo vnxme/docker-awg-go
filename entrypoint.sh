@@ -50,6 +50,9 @@ launch() {
 		echo "$(basename -- "$0"): Warning: No command line arguments are supported. Ignoring them"
 	fi 
 
+	# Apply kernel parameters
+	sysctl -q -p /etc/sysctl.d/*.conf /etc/sysctl.conf || true
+
 	# Call pre-up hooks
 	hooks "pre-up"
 
